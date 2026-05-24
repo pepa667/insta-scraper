@@ -73,7 +73,7 @@ jobs:
           repository: ${{ steps.central.outputs.repo }}
           path: _scraper
           sparse-checkout: |
-            insta/sync.js
+            insta/sync.cjs
           sparse-checkout-cone-mode: false
 
       - name: Setup Node.js
@@ -96,7 +96,7 @@ jobs:
           IMAGES_PUBLIC_PATH: ${{ inputs.images_public_path || 'images/insta' }}
           LINKS_JSON_PATH: ${{ github.workspace }}/${{ inputs.links_json_path || 'www/insta-links.json' }}
           DEBUG_HTML_PATH: ${{ github.workspace }}/www/debug-insta.html
-        run: node _scraper/insta/sync.js
+        run: node _scraper/insta/sync.cjs
 
       - name: Upload debug artifact (disponivel mesmo em caso de falha)
         if: always()

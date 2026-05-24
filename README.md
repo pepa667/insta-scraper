@@ -13,7 +13,7 @@ Client repo cron
 pepa667/insta-scraper   ← scrape-reusable.yml (workflow_call)
       │
       ├─ checkout client repo
-      ├─ sparse-checkout insta/sync.js from this repo
+      ├─ sparse-checkout insta/sync.cjs from this repo
       ├─ run script → downloads 9 images + writes insta-links.json
       └─ commit + push to client repo
 ```
@@ -27,7 +27,7 @@ The client site reads `www/insta-links.json` to render the feed — no Instagram
 ```
 insta-scraper/
 ├── insta/
-│   └── sync.js                        # scraping script (Node 24, no npm deps)
+│   └── sync.cjs                       # scraping script (Node 24, no npm deps)
 ├── client/
 │   └── gallery.js                     # browser-side gallery renderer
 ├── .github/
