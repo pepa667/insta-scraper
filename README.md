@@ -137,11 +137,22 @@ The client site reads this file to render the feed without any runtime dependenc
 
 [`client/gallery.js`](client/gallery.js) is a zero-dependency browser script that reads `insta-links.json` and populates a gallery element.
 
+> **Vite / build tools:** files inside `public/` are served from the site root — Vite strips the `public/` prefix on build. If your images are in `public/ig_photos/`, reference every asset **without** the `public/` segment:
+> ```html
+> <!-- ✅ correct -->
+> <script src="/ig_photos/gallery.js" data-gallery="#insta-feed-gallery"
+>         data-json-path="/ig_photos/insta-links.json"></script>
+>
+> <!-- ❌ works only in raw filesystem, breaks in Vite build -->
+> <script src="public/ig_photos/gallery.js" ...></script>
+> ```
+
 ### Option A — data attributes (zero JS)
 
 ```html
-<script src="client/gallery.js"
+<script src="/ig_photos/gallery.js"
         data-gallery="#insta-feed-gallery"
+        data-json-path="/ig_photos/insta-links.json"
         data-item=".grid > div">
 </script>
 ```
@@ -152,10 +163,10 @@ The client site reads this file to render the feed without any runtime dependenc
 
 ```javascript
 renderInstagramGallery({
-  gallery:  '#insta-feed-gallery', // required — wrapper selector
-  item:     '.grid > div',         // optional — placeholder selector (replace mode)
-  jsonPath: './insta-links.json',  // default
-  linkTarget: '_blank',            // default
+  gallery:  '#insta-feed-gallery',       // required — wrapper selector
+  item:     '.grid > div',               // optional — placeholder selector (replace mode)
+  jsonPath: '/ig_photos/insta-links.json', // adjust to your images_public_path
+  linkTarget: '_blank',                  // default
 });
 ```
 
