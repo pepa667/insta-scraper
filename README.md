@@ -73,11 +73,42 @@ In the client repo: **Settings → Secrets and variables → Actions**
 
 > **Note:** The session cookie expires every few weeks to months. When the workflow starts failing with a 401, just refresh this secret.
 
+### Optional inputs
+
+All inputs have sensible defaults and can be omitted entirely.
+
+| Input | Default | Description |
+|---|---|---|
+| `post_count` | `9` | Number of posts to download |
+| `image_prefix` | `instaFoto_` | Filename prefix — e.g. `instaFoto_01.jpg` |
+| `image_ext` | `jpg` | Image file extension (without dot) |
+| `images_dir` | `www/images/insta` | Destination folder for images (relative to repo root) |
+| `images_public_path` | `images/insta` | Public path written into `insta-links.json` |
+| `links_json_path` | `www/insta-links.json` | Output JSON path (relative to repo root) |
+
+Example overriding some defaults:
+
+```yaml
+jobs:
+  update-feed:
+    uses: pepa667/insta-scraper/.github/workflows/scrape-reusable.yml@main
+    with:
+      post_count: 12
+      image_prefix: foto_
+      images_dir: public/img/insta
+      images_public_path: img/insta
+      links_json_path: public/insta-links.json
+    secrets:
+      SCRAPER_API_KEY: ${{ secrets.SCRAPER_API_KEY }}
+      INSTA_USERNAME:  ${{ secrets.INSTA_USERNAME }}
+      INSTA_SESSION_ID: ${{ secrets.INSTA_SESSION_ID }}
+```
+
 ### 3 — Prepare the client site
 
-The script writes two things to the client repo:
+The script writes two things to the client repo (paths are configurable via inputs):
 
-| Path | Contents |
+| Path (defaults) | Contents |
 |---|---|
 | `www/images/insta/instaFoto_01.jpg` … `instaFoto_09.jpg` | Downloaded images |
 | `www/insta-links.json` | JSON manifest |

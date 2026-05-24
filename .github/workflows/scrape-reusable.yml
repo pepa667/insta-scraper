@@ -8,6 +8,37 @@ name: scrape-instagram-reusable
 
 on:
   workflow_call:
+    inputs:
+      post_count:
+        description: 'Quantos posts baixar (default: 9)'
+        required: false
+        type: number
+        default: 9
+      image_prefix:
+        description: 'Prefixo dos ficheiros de imagem (default: instaFoto_)'
+        required: false
+        type: string
+        default: 'instaFoto_'
+      image_ext:
+        description: 'Extensão dos ficheiros de imagem, sem ponto (default: jpg)'
+        required: false
+        type: string
+        default: 'jpg'
+      images_dir:
+        description: 'Pasta destino das imagens, relativa ao workspace (default: www/images/insta)'
+        required: false
+        type: string
+        default: 'www/images/insta'
+      images_public_path:
+        description: 'Caminho público usado no insta-links.json (default: images/insta)'
+        required: false
+        type: string
+        default: 'images/insta'
+      links_json_path:
+        description: 'Caminho do ficheiro JSON de output, relativo ao workspace (default: www/insta-links.json)'
+        required: false
+        type: string
+        default: 'www/insta-links.json'
     secrets:
       SCRAPER_API_KEY:
         required: true
@@ -53,15 +84,19 @@ jobs:
           node-version: 24
 
       - name: Prepare output directories
-        run: mkdir -p www/images/insta
+        run: mkdir -p "${{ inputs.images_dir || 'www/images/insta' }}"
 
       - name: Run Instagram Scraper
         env:
           SCRAPER_API_KEY: ${{ secrets.SCRAPER_API_KEY }}
           INSTA_USERNAME: ${{ secrets.INSTA_USERNAME }}
           INSTA_SESSION_ID: ${{ secrets.INSTA_SESSION_ID }}
-          IMAGES_DIR: ${{ github.workspace }}/www/images/insta
-          LINKS_JSON_PATH: ${{ github.workspace }}/www/insta-links.json
+          POST_COUNT: ${{ inputs.post_count || 9 }}
+          IMAGE_PREFIX: ${{ inputs.image_prefix || 'instaFoto_' }}
+          IMAGE_EXT: ${{ inputs.image_ext || 'jpg' }}
+          IMAGES_DIR: ${{ github.workspace }}/${{ inputs.images_dir || 'www/images/insta' }}
+          IMAGES_PUBLIC_PATH: ${{ inputs.images_public_path || 'images/insta' }}
+          LINKS_JSON_PATH: ${{ github.workspace }}/${{ inputs.links_json_path || 'www/insta-links.json' }}
           DEBUG_HTML_PATH: ${{ github.workspace }}/www/debug-insta.html
         run: node _scraper/insta/get-insta-feed.js
 
@@ -79,8 +114,8 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add www/images/insta/
-          git add www/insta-links.json
+          git add "${{ inputs.images_dir || 'www/images/insta' }}/"
+          git add "${{ inputs.links_json_path || 'www/insta-links.json' }}"
           if git diff --cached --quiet; then
             echo "Nenhuma modificação pendente no feed estático."
           else

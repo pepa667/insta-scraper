@@ -10,6 +10,12 @@ const IMAGES_DIR = process.env.IMAGES_DIR || path.join(__dirname, '../www/images
 const LINKS_JSON_PATH = process.env.LINKS_JSON_PATH || path.join(__dirname, '../www/insta-links.json');
 const DEBUG_HTML_PATH = process.env.DEBUG_HTML_PATH || path.join(__dirname, '../www/debug-insta.html');
 
+// Customização do output
+const POST_COUNT = Math.max(1, parseInt(process.env.POST_COUNT || '9', 10));
+const IMAGE_PREFIX = process.env.IMAGE_PREFIX || 'instaFoto_';
+const IMAGE_EXT = (process.env.IMAGE_EXT || 'jpg').replace(/^\./, '');
+const IMAGES_PUBLIC_PATH = (process.env.IMAGES_PUBLIC_PATH || 'images/insta').replace(/\/$/, '');
+
 fs.mkdirSync(IMAGES_DIR, { recursive: true });
 if (!fs.existsSync(LINKS_JSON_PATH)) {
     fs.writeFileSync(LINKS_JSON_PATH, JSON.stringify({ posts: [] }, null, 2));
@@ -110,7 +116,7 @@ function extractPostsFromHTML(html) {
             seen.add(shortcode);
             posts.push({ shortcode, imageUrl });
         }
-        if (posts.length >= 9) break;
+        if (posts.length >= POST_COUNT) break;
     }
     return posts;
 }
@@ -170,7 +176,7 @@ async function runScraper() {
         }
 
         if (userId && (!posts || posts.length === 0)) {
-            const feedUrl = `https://i.instagram.com/api/v1/feed/user/${userId}/?count=9`;
+            const feedUrl = `https://i.instagram.com/api/v1/feed/user/${userId}/?count=${POST_COUNT}`;
             const proxyFeedUrl = new URL('https://api.scrape.do');
             proxyFeedUrl.searchParams.set('token', SCRAPER_KEY);
             proxyFeedUrl.searchParams.set('url', feedUrl);
@@ -210,7 +216,7 @@ async function runScraper() {
         }
 
         if (userId && (!posts || posts.length === 0)) {
-            const feedUrl = `https://i.instagram.com/api/v1/feed/user/${userId}/?count=9`;
+            const feedUrl = `https://i.instagram.com/api/v1/feed/user/${userId}/?count=${POST_COUNT}`;
             const feedRes = await requestRaw(feedUrl, igHeaders);
             console.log(`[DEBUG] Direct Feed Status: ${feedRes.statusCode} | Body: ${feedRes.body.slice(0, 200)}`);
             if (feedRes.statusCode === 200) {
@@ -229,23 +235,24 @@ async function runScraper() {
         throw new Error('Posts nao encontrados. Verifica se INSTA_SESSION_ID e valido (Chrome -> instagram.com -> F12 -> Application -> Cookies -> sessionid).');
     }
 
-    const topPosts = posts.slice(0, 9);
+    const topPosts = posts.slice(0, POST_COUNT);
     const linksData = [];
+    const pad = String(POST_COUNT).length;
 
     console.log(`[PIPELINE] Processando ${topPosts.length} posts...`);
 
     for (let i = 0; i < topPosts.length; i++) {
         const { shortcode, imageUrl } = topPosts[i];
-        const indexValue = String(i + 1).padStart(2, '0');
-        const imageName = `instaFoto_${indexValue}.jpg`;
+        const indexValue = String(i + 1).padStart(pad, '0');
+        const imageName = `${IMAGE_PREFIX}${indexValue}.${IMAGE_EXT}`;
         const destPath = path.join(IMAGES_DIR, imageName);
 
-        console.log(`-> Baixando [${indexValue}/${String(topPosts.length).padStart(2, '0')}]: ${imageName}`);
+        console.log(`-> Baixando [${indexValue}/${String(topPosts.length).padStart(pad, '0')}]: ${imageName}`);
         await downloadFile(imageUrl, destPath);
 
         linksData.push({
             index: indexValue,
-            localImage: `images/insta/${imageName}`,
+            localImage: `${IMAGES_PUBLIC_PATH}/${imageName}`,
             permalink: `https://www.instagram.com/p/${shortcode}/`,
         });
     }

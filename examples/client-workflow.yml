@@ -19,6 +19,14 @@ on:
 jobs:
   update-feed:
     uses: SEU_USUARIO/insta-scraper/.github/workflows/scrape-reusable.yml@main
+    with:
+      # Todos os inputs abaixo são opcionais — remova os que não precisar alterar.
+      post_count: 9             # Quantos posts baixar
+      image_prefix: instaFoto_  # Prefixo dos ficheiros: instaFoto_01.jpg, instaFoto_02.jpg…
+      image_ext: jpg            # Extensão dos ficheiros de imagem
+      images_dir: www/images/insta          # Pasta destino das imagens (relativa ao repo)
+      images_public_path: images/insta      # Caminho público usado no insta-links.json
+      links_json_path: www/insta-links.json # Caminho do JSON de output
     secrets:
       SCRAPER_API_KEY: ${{ secrets.SCRAPER_API_KEY }}
       INSTA_USERNAME: ${{ secrets.INSTA_USERNAME }}
