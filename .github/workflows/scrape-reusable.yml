@@ -60,17 +60,11 @@ jobs:
         with:
           token: ${{ github.token }}
 
-      # 2. Extrai o nome deste repo central a partir do workflow_ref
-      #    github.workflow_ref = "OWNER/REPO/.github/workflows/FILE.yml@refs/heads/BRANCH"
-      - name: Extract central repo
-        id: central
-        run: echo "repo=$(echo '${{ github.workflow_ref }}' | cut -d'/' -f1-2)" >> $GITHUB_OUTPUT
-
-      # 3. Busca apenas o script deste repo central (sem clonar tudo)
+      # 2. Busca apenas o script deste repo central (sem clonar tudo)
       - name: Checkout scraper script
         uses: actions/checkout@v4
         with:
-          repository: ${{ steps.central.outputs.repo }}
+          repository: pepa667/insta-scraper
           path: _scraper
           sparse-checkout: |
             insta/sync.cjs
