@@ -1,4 +1,4 @@
-name: scrape-instagram-reusable
+name: Instagram Feed — Reusable Sync
 
 # Workflow reutilizável: qualquer repo cliente chama este workflow via workflow_call.
 # Secrets necessários no repo cliente:
@@ -48,7 +48,7 @@ on:
         required: true
 
 jobs:
-  scrape:
+  sync:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -75,7 +75,7 @@ jobs:
           repository: ${{ steps.central.outputs.repo }}
           path: _scraper
           sparse-checkout: |
-            insta/get-insta-feed.js
+            insta/sync.js
           sparse-checkout-cone-mode: false
 
       - name: Setup Node.js
@@ -98,7 +98,7 @@ jobs:
           IMAGES_PUBLIC_PATH: ${{ inputs.images_public_path || 'images/insta' }}
           LINKS_JSON_PATH: ${{ github.workspace }}/${{ inputs.links_json_path || 'www/insta-links.json' }}
           DEBUG_HTML_PATH: ${{ github.workspace }}/www/debug-insta.html
-        run: node _scraper/insta/get-insta-feed.js
+        run: node _scraper/insta/sync.js
 
       - name: Upload debug artifact (disponivel mesmo em caso de falha)
         if: always()

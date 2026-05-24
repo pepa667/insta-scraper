@@ -13,7 +13,7 @@ Client repo cron
 pepa667/insta-scraper   ← scrape-reusable.yml (workflow_call)
       │
       ├─ checkout client repo
-      ├─ sparse-checkout insta/get-insta-feed.js from this repo
+      ├─ sparse-checkout insta/sync.js from this repo
       ├─ run script → downloads 9 images + writes insta-links.json
       └─ commit + push to client repo
 ```
@@ -27,12 +27,12 @@ The client site reads `www/insta-links.json` to render the feed — no Instagram
 ```
 insta-scraper/
 ├── insta/
-│   └── get-insta-feed.js          # scraping script (Node 24, no npm deps)
+│   └── sync.js                        # scraping script (Node 24, no npm deps)
 ├── .github/
 │   └── workflows/
-│       └── scrape-reusable.yml    # reusable workflow (workflow_call)
+│       └── scrape-reusable.yml        # reusable workflow (workflow_call)
 └── examples/
-    └── client-workflow.yml        # copy this to each client repo
+    └── update-instagram.yml           # copy this to each client repo
 ```
 
 ---
@@ -41,7 +41,7 @@ insta-scraper/
 
 ### 1 — Add the workflow to the client repo
 
-Copy [`examples/client-workflow.yml`](examples/client-workflow.yml) to `.github/workflows/update-instagram.yml` in the client repo.
+Copy [`examples/update-instagram.yml`](examples/update-instagram.yml) to `.github/workflows/update-instagram.yml` in the client repo.
 
 ```yaml
 jobs:
@@ -158,7 +158,7 @@ Same two requests but without the proxy. May get rate-limited (429) from GitHub 
 
 ### Response format support
 
-`extractPostsFromObject()` handles all known Instagram response shapes:
+`parsePostsFromJson()` handles all known Instagram response shapes:
 
 | Format | Fields used |
 |---|---|
@@ -194,7 +194,7 @@ cookie: sessionid=SESSION_ID
     repository: ${{ steps.central.outputs.repo }}
     path: _scraper
     sparse-checkout: |
-      insta/get-insta-feed.js
+      insta/sync.js
     sparse-checkout-cone-mode: false
 ```
 

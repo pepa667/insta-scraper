@@ -21,7 +21,7 @@ if (!fs.existsSync(LINKS_JSON_PATH)) {
     fs.writeFileSync(LINKS_JSON_PATH, JSON.stringify({ posts: [] }, null, 2));
 }
 
-function requestRaw(url, extraHeaders = {}) {
+function httpGet(url, extraHeaders = {}) {
     return new Promise((resolve, reject) => {
         const parsedUrl = new URL(url);
         https.get({ hostname: parsedUrl.hostname, path: parsedUrl.pathname + parsedUrl.search, headers: extraHeaders }, (res) => {
@@ -52,11 +52,11 @@ function downloadFile(url, destPath) {
 
 // Busca recursiva por dados de posts dentro de qualquer JSON
 // Suporta formato antigo (edge_owner_to_timeline_media), novo (media.edges) e mobile (items[])
-function extractPostsFromObject(obj, depth = 0) {
+function parsePostsFromJson(obj, depth = 0) {
     if (depth > 15 || !obj || typeof obj !== 'object') return null;
     if (Array.isArray(obj)) {
         for (const item of obj) {
-            const found = extractPostsFromObject(item, depth + 1);
+            const found = parsePostsFromJson(item, depth + 1);
             if (found) return found;
         }
         return null;
@@ -97,14 +97,14 @@ function extractPostsFromObject(obj, depth = 0) {
         if (posts.length > 0) return posts;
     }
     for (const val of Object.values(obj)) {
-        const found = extractPostsFromObject(val, depth + 1);
+        const found = parsePostsFromJson(val, depth + 1);
         if (found) return found;
     }
     return null;
 }
 
 // Fallback: regex buscando pares shortcode + imagem CDN no HTML renderizado
-function extractPostsFromHTML(html) {
+function parsePostsFromHtml(html) {
     const posts = [];
     const seen = new Set();
     const regex = /href="\/p\/([A-Za-z0-9_-]+)\/"[\s\S]{0,2000}?(?:src|srcset|data-src)="(https:\/\/[^"]*(?:cdninstagram\.com|fbcdn\.net)[^"]*)"/g;
@@ -121,7 +121,7 @@ function extractPostsFromHTML(html) {
     return posts;
 }
 
-async function runScraper() {
+async function main() {
     console.log(`[START] Raspagem de @${USERNAME}`);
 
     if (!SCRAPER_KEY || !USERNAME) {
@@ -166,7 +166,7 @@ async function runScraper() {
             try {
                 const json = JSON.parse(profileRes.body);
                 userId = json?.data?.user?.id;
-                posts = extractPostsFromObject(json);
+                posts = parsePostsFromJson(json);
                 if (posts?.length > 0) console.log(`[STRATEGY 1a] Posts no profile response: ${posts.length}`);
                 else if (userId) console.log(`[STRATEGY 1a] user_id obtido: ${userId}. Buscando feed...`);
                 else console.log('[STRATEGY 1a] Sem user_id nem posts no profile response.');
@@ -189,7 +189,7 @@ async function runScraper() {
             if (feedRes.statusCode === 200) {
                 try {
                     const json = JSON.parse(feedRes.body);
-                    posts = extractPostsFromObject(json);
+                    posts = parsePostsFromJson(json);
                     if (posts?.length > 0) console.log(`[STRATEGY 1b] Sucesso! ${posts.length} posts.`);
                     else console.log('[STRATEGY 1b] JSON OK mas posts nao encontrados. Keys: ' + Object.keys(json).join(', '));
                 } catch (e) {
@@ -211,7 +211,7 @@ async function runScraper() {
             try {
                 const json = JSON.parse(profileRes.body);
                 userId = json?.data?.user?.id;
-                posts = extractPostsFromObject(json);
+                posts = parsePostsFromJson(json);
             } catch (e) { /* sem posts no profile */ }
         }
 
@@ -222,7 +222,7 @@ async function runScraper() {
             if (feedRes.statusCode === 200) {
                 try {
                     const json = JSON.parse(feedRes.body);
-                    posts = extractPostsFromObject(json);
+                    posts = parsePostsFromJson(json);
                     if (posts?.length > 0) console.log(`[STRATEGY 2] Sucesso! ${posts.length} posts.`);
                 } catch (e) { /* falhou */ }
             } else if (feedRes.statusCode === 401 || feedRes.statusCode === 403) {
@@ -235,33 +235,33 @@ async function runScraper() {
         throw new Error('Posts nao encontrados. Verifica se INSTA_SESSION_ID e valido (Chrome -> instagram.com -> F12 -> Application -> Cookies -> sessionid).');
     }
 
-    const topPosts = posts.slice(0, POST_COUNT);
-    const linksData = [];
+    const selectedPosts = posts.slice(0, POST_COUNT);
+    const manifest = [];
     const pad = String(POST_COUNT).length;
 
-    console.log(`[PIPELINE] Processando ${topPosts.length} posts...`);
+    console.log(`[PIPELINE] Processando ${selectedPosts.length} posts...`);
 
-    for (let i = 0; i < topPosts.length; i++) {
-        const { shortcode, imageUrl } = topPosts[i];
-        const indexValue = String(i + 1).padStart(pad, '0');
-        const imageName = `${IMAGE_PREFIX}${indexValue}.${IMAGE_EXT}`;
+    for (let i = 0; i < selectedPosts.length; i++) {
+        const { shortcode, imageUrl } = selectedPosts[i];
+        const fileIndex = String(i + 1).padStart(pad, '0');
+        const imageName = `${IMAGE_PREFIX}${fileIndex}.${IMAGE_EXT}`;
         const destPath = path.join(IMAGES_DIR, imageName);
 
-        console.log(`-> Baixando [${indexValue}/${String(topPosts.length).padStart(pad, '0')}]: ${imageName}`);
+        console.log(`-> Baixando [${fileIndex}/${String(selectedPosts.length).padStart(pad, '0')}]: ${imageName}`);
         await downloadFile(imageUrl, destPath);
 
-        linksData.push({
-            index: indexValue,
+        manifest.push({
+            index: fileIndex,
             localImage: `${IMAGES_PUBLIC_PATH}/${imageName}`,
             permalink: `https://www.instagram.com/p/${shortcode}/`,
         });
     }
 
-    fs.writeFileSync(LINKS_JSON_PATH, JSON.stringify({ posts: linksData }, null, 2));
+    fs.writeFileSync(LINKS_JSON_PATH, JSON.stringify({ posts: manifest }, null, 2));
     console.log('[SUCCESS] Sincronizacao realizada!');
 }
 
-runScraper().catch(err => {
+main().catch(err => {
     console.error(`[CRITICAL] ${err.message}`);
     process.exit(1);
 });
