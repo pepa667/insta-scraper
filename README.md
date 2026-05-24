@@ -28,6 +28,8 @@ The client site reads `www/insta-links.json` to render the feed — no Instagram
 insta-scraper/
 ├── insta/
 │   └── sync.js                        # scraping script (Node 24, no npm deps)
+├── client/
+│   └── gallery.js                     # browser-side gallery renderer
 ├── .github/
 │   └── workflows/
 │       └── scrape-reusable.yml        # reusable workflow (workflow_call)
@@ -128,6 +130,57 @@ The script writes two things to the client repo (paths are configurable via inpu
 ```
 
 The client site reads this file to render the feed without any runtime dependency on Instagram.
+
+---
+
+## Client-side gallery renderer
+
+[`client/gallery.js`](client/gallery.js) is a zero-dependency browser script that reads `insta-links.json` and populates a gallery element.
+
+### Option A — data attributes (zero JS)
+
+```html
+<script src="client/gallery.js"
+        data-gallery="#insta-feed-gallery"
+        data-item=".grid > div">
+</script>
+```
+
+`data-item` targets the existing placeholder `<div>`s. The script replaces them one-to-one with post cards. Omit `data-item` to clear the wrapper and append cards instead.
+
+### Option B — JS API
+
+```javascript
+renderInstagramGallery({
+  gallery:  '#insta-feed-gallery', // required — wrapper selector
+  item:     '.grid > div',         // optional — placeholder selector (replace mode)
+  jsonPath: './insta-links.json',  // default
+  linkTarget: '_blank',            // default
+});
+```
+
+### Option C — custom card builder
+
+```javascript
+renderInstagramGallery({
+  gallery: '#insta-feed-gallery',
+  buildCard: function (post, linkTarget) {
+    var div = document.createElement('div');
+    div.className = 'my-card';
+    div.style.backgroundImage = "url('" + post.localImage + "')";
+    // post.index, post.permalink also available
+    return div;
+  },
+});
+```
+
+### Behaviour
+
+| Scenario | Result |
+|---|---|
+| `item` provided, N placeholders, M posts (M ≤ N) | First M placeholders replaced, rest untouched |
+| `item` provided, fewer placeholders than posts | Extra posts silently skipped (layout preserved) |
+| `item` omitted | Wrapper cleared, all posts appended |
 
 ---
 
