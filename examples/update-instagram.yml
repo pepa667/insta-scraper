@@ -18,6 +18,8 @@ on:
 
 jobs:
   update-feed:
+    permissions:
+      contents: write
     uses: SEU_USUARIO/insta-scraper/.github/workflows/scrape-reusable.yml@main
     with:
       # Todos os inputs abaixo são opcionais — remova os que não precisar alterar.
