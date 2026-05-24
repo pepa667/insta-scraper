@@ -158,7 +158,7 @@ async function main() {
         proxyUrl.searchParams.set('customHeaders', 'true');
 
         console.log('[STRATEGY 1a] Obtendo user_id via web_profile_info...');
-        const profileRes = await requestRaw(proxyUrl.toString(), igHeaders);
+        const profileRes = await httpGet(proxyUrl.toString(), igHeaders);
         console.log(`[DEBUG] Profile Status: ${profileRes.statusCode} | Body: ${profileRes.body.slice(0, 200)}`);
 
         let userId = null;
@@ -183,7 +183,7 @@ async function main() {
             proxyFeedUrl.searchParams.set('customHeaders', 'true');
 
             console.log('[STRATEGY 1b] Obtendo posts via feed/user/{id}...');
-            const feedRes = await requestRaw(proxyFeedUrl.toString(), igHeaders);
+            const feedRes = await httpGet(proxyFeedUrl.toString(), igHeaders);
             console.log(`[DEBUG] Feed Status: ${feedRes.statusCode} | Body: ${feedRes.body.slice(0, 400)}`);
 
             if (feedRes.statusCode === 200) {
@@ -203,7 +203,7 @@ async function main() {
     if (!posts || posts.length === 0) {
         console.log('[STRATEGY 2] Chamada direta ao Instagram com session cookie...');
         const profileUrl = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${USERNAME}`;
-        const profileRes = await requestRaw(profileUrl, igHeaders);
+        const profileRes = await httpGet(profileUrl, igHeaders);
         console.log(`[DEBUG] Direct Status: ${profileRes.statusCode} | Body: ${profileRes.body.slice(0, 200)}`);
 
         let userId = null;
@@ -217,7 +217,7 @@ async function main() {
 
         if (userId && (!posts || posts.length === 0)) {
             const feedUrl = `https://i.instagram.com/api/v1/feed/user/${userId}/?count=${POST_COUNT}`;
-            const feedRes = await requestRaw(feedUrl, igHeaders);
+            const feedRes = await httpGet(feedUrl, igHeaders);
             console.log(`[DEBUG] Direct Feed Status: ${feedRes.statusCode} | Body: ${feedRes.body.slice(0, 200)}`);
             if (feedRes.statusCode === 200) {
                 try {
