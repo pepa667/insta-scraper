@@ -16,10 +16,11 @@ on:
     - cron: '0 2 * * *' # Diário às 02:00 UTC — ajuste para não colidir com outros clientes
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   update-feed:
-    permissions:
-      contents: write
     uses: SEU_USUARIO/insta-scraper/.github/workflows/scrape-reusable.yml@main
     with:
       # Todos os inputs abaixo são opcionais — remova os que não precisar alterar.
